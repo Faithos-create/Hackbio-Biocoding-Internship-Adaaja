@@ -1,0 +1,75 @@
+#using dicionaries to organise the information in team proline...
+team_proline = [
+    {
+        "Name": "Faith Adaaja",
+        "Slack Username": "Adaaja",
+        "Email": "faithadaaja@gmail.com",
+        "Hobby": "Fashion designing",
+        "Country": "Nigeria",
+        "Discipline": "Cell Biology and Genetics",
+        "Preferred Programming Language": "Python"
+    },
+    {
+        "Name": "Ogungbe Abisoye",
+        "Slack Username": "Abisoye",
+        "Email": "ogungbeadebola24@gmail.com",
+        "Hobby": "Reading",
+        "Country": "Nigeria",
+        "Discipline": "Cell Biology and Genetics",
+        "Preferred Programming Language": "Java"
+    },
+    {
+        "Name": "Obadare Adedoye",
+        "Slack Username": "Adedoye",
+        "Email": "adedoyeobafolaju@gmail.com",
+        "Hobby": "Taking Pictures",
+        "Country": "Nigeria",
+        "Discipline": "Cell Biology and Genetics",
+        "Preferred Programming Language": "C++"
+    },
+    {
+        "Name": "OgunUrum Francis Uwanu",
+        "Slack Username": "Uwanu",
+        "Email": "urumfrank6@gmail.com",
+        "Hobby": "Music listening",
+        "Country": "Nigeria",
+        "Discipline": "Cell Biology and Genetics",
+        "Preferred Programming Language": "R"
+    }
+]
+
+print("Team Proline Members Information:\n")
+
+print("Name:", team_proline[0]["Name"])
+print("Slack Username:", team_proline[0]["Slack Username"])
+print("Email:", team_proline[0]["Email"])
+print("Hobby:", team_proline[0]["Hobby"])
+print("Country:", team_proline[0]["Country"])
+print("Discipline:", team_proline[0]["Discipline"])
+print("Preferred Programming Language:", team_proline[0]["Preferred Programming Language"], "\n")
+
+print("Name:", team_proline[1]["Name"])
+print("Slack Username:", team_proline[1]["Slack Username"])
+print("Email:", team_proline[1]["Email"])
+print("Hobby:", team_proline[1]["Hobby"])
+print("Country:", team_proline[1]["Country"])
+print("Discipline:", team_proline[1]["Discipline"])
+print("Preferred Programming Language:", team_proline[1]["Preferred Programming Language"], "\n")
+
+print("Name:", team_proline[2]["Name"])
+print("Slack Username:", team_proline[2]["Slack Username"])
+print("Email:", team_proline[2]["Email"])
+print("Hobby:", team_proline[2]["Hobby"])
+print("Country:", team_proline[2]["Country"])
+print("Discipline:", team_proline[2]["Discipline"])
+print("Preferred Programming Language:", team_proline[2]["Preferred Programming Language"], "\n")
+
+print("Name:", team_proline[3]["Name"])
+print("Slack Username:", team_proline[3]["Slack Username"])
+print("Email:", team_proline[3]["Email"])
+print("Hobby:", team_proline[3]["Hobby"])
+print("Country:", team_proline[3]["Country"])
+print("Discipline:", team_proline[3]["Discipline"])
+print("Preferred Programming Language:", team_proline[3]["Preferred Programming Language"], "\n")
+
+
