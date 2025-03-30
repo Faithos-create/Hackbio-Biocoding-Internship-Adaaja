@@ -1,0 +1,83 @@
+#start coding... 
+def translate_dna_to_protein(dna_seq):
+    """Translate a DNA sequence into a protein sequence."""
+    codon_table = {
+        "ATA": "I", "ATC": "I", "ATT": "I", "ATG": "M",
+        "ACA": "T", "ACC": "T", "ACG": "T", "ACT": "T",
+        "AAC": "N", "AAT": "N", "AAA": "K", "AAG": "K",
+        "AGC": "S", "AGT": "S", "AGA": "R", "AGG": "R",
+        "CTA": "L", "CTC": "L", "CTG": "L", "CTT": "L",
+        "CCA": "P", "CCC": "P", "CCG": "P", "CCT": "P",
+        "CAC": "H", "CAT": "H", "CAA": "Q", "CAG": "Q",
+        "CGA": "R", "CGC": "R", "CGG": "R", "CGT": "R",
+        "GTA": "V", "GTC": "V", "GTG": "V", "GTT": "V",
+        "GCA": "A", "GCC": "A", "GCG": "A", "GCT": "A",
+        "GAC": "D", "GAT": "D", "GAA": "E", "GAG": "E",
+        "GGA": "G", "GGC": "G", "GGG": "G", "GGT": "G",
+        "TCA": "S", "TCC": "S", "TCG": "S", "TCT": "S",
+        "TTC": "F", "TTT": "F", "TTA": "L", "TTG": "L",
+        "TAC": "Y", "TAT": "Y", "TAA": "*", "TAG": "*",
+        "TGC": "C", "TGT": "C", "TGA": "*", "TGG": "W"
+    }
+    
+    dna_seq = dna_seq.upper()  # Convert to uppercase
+    protein = ""
+    for i in range(0, len(dna_seq) - 2, 3):  # Iterate over codons
+        codon = dna_seq[i:i+3]
+        protein += codon_table.get(codon, "?")  # Use '?' for unknown codons
+    return protein
+def logistic_growth(K, r, time_steps, lag_phase, exp_phase):
+    """Simulates logistic growth with a lag and exponential phase."""
+    population = [10]  # Initial small population
+    for t in range(1, time_steps + 1):
+        if t < lag_phase:
+            pop = population[-1]  # No growth during lag phase
+        elif t < (lag_phase + exp_phase):
+            pop = population[-1] * (1 + r)  # Exponential growth phase
+        else:
+            pop = population[-1] + r * population[-1] * (1 - population[-1] / K)  # Logistic growth
+        if pop > K:  
+            pop = K  # Keep within carrying capacity limit
+        population.append(pop)
+    return population
+def generate_growth_curves():
+    """Generates 100 different logistic growth curves with varied lag and exponential phases."""
+    growth_curves = []
+    for i in range(100):
+        lag_phase = 2 + (i % 5)  # Vary lag phase between 2 and 6
+        exp_phase = 5 + (i % 4)  # Vary exponential phase between 5 and 9
+        growth_curves.append(logistic_growth(K=1000, r=0.1, time_steps=50, lag_phase=lag_phase, exp_phase=exp_phase))
+    return growth_curves
+def time_to_reach_80_percent(population, K):
+    """Finds the first time step when the population reaches 80% of carrying capacity."""
+    target = 0.8 * K
+    for t in range(len(population)):
+        if population[t] >= target:
+            return t
+    return len(population) - 1  # Return last time step if never reached
+def hamming_distance(str1, str2):
+    """Computes the Hamming distance between two strings, padding with underscores."""
+    max_len = max(len(str1), len(str2))
+    str1 = str1.ljust(max_len, "_")  # Pad with underscores
+    str2 = str2.ljust(max_len, "_")  
+    distance = sum(1 for i in range(max_len) if str1[i] != str2[i])
+    return distance
+# Example 1: Translate DNA to Protein
+dna_seq = "ATGCGTACGCTTAA"
+print("Protein Sequence:", translate_dna_to_protein(dna_seq))
+
+# Example 2: Simulate Population Growth
+population_growth = logistic_growth(K=1000, r=0.1, time_steps=50, lag_phase=3, exp_phase=7)
+print("Final Population Size:", population_growth[-1])
+
+# Example 3: Generate Growth Curves
+growth_curves = generate_growth_curves()
+print("Total Growth Curves Generated:", len(growth_curves))
+
+# Example 4: Find Time to Reach 80% of Carrying Capacity
+time_80 = time_to_reach_80_percent(population_growth, 1000)
+print("Time to Reach 80% of K:", time_80)
+
+# Example 5: Calculate Hamming Distance
+distance = hamming_distance("adaaja", "Faith_adaaja")
+print("Hamming Distance:", distance)
