@@ -1,0 +1,125 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+from scipy.optimize import curve_fit
+from scipy.stats import ttest_ind
+
+# Functions from previous stage
+def translate_dna_to_protein(dna_seq):
+    codon_table = {
+        'ATA':'I', 'ATC':'I', 'ATT':'I', 'ATG':'M',
+        'ACA':'T', 'ACC':'T', 'ACG':'T', 'ACT':'T',
+        'AAC':'N', 'AAT':'N', 'AAA':'K', 'AAG':'K',
+        'AGC':'S', 'AGT':'S', 'AGA':'R', 'AGG':'R',
+        'CTA':'L', 'CTC':'L', 'CTG':'L', 'CTT':'L',
+        'CCA':'P', 'CCC':'P', 'CCG':'P', 'CCT':'P',
+        'CAC':'H', 'CAT':'H', 'CAA':'Q', 'CAG':'Q',
+        'CGA':'R', 'CGC':'R', 'CGG':'R', 'CGT':'R',
+        'GTA':'V', 'GTC':'V', 'GTG':'V', 'GTT':'V',
+        'GCA':'A', 'GCC':'A', 'GCG':'A', 'GCT':'A',
+        'GAC':'D', 'GAT':'D', 'GAA':'E', 'GAG':'E',
+        'GGA':'G', 'GGC':'G', 'GGG':'G', 'GGT':'G',
+        'TCA':'S', 'TCC':'S', 'TCG':'S', 'TCT':'S',
+        'TTC':'F', 'TTT':'F', 'TTA':'L', 'TTG':'L',
+        'TAC':'Y', 'TAT':'Y', 'TAA':'_', 'TAG':'_',
+        'TGC':'C', 'TGT':'C', 'TGA':'_', 'TGG':'W',
+    }
+    protein = ""
+    for i in range(0, len(dna_seq), 3):
+        codon = dna_seq[i:i+3]
+        if codon_table.get(codon):
+            protein += codon_table[codon]
+    return protein
+
+def logistic_growth(K, r, t, lag_phase=0, exp_phase=1):
+    # Logistic growth model
+    return K / (1 + np.exp(-r * (t - lag_phase)))
+
+def time_to_reach_80_percent(od_values, K):
+    # Find first time point where OD >= 80% of K
+    threshold = 0.8 * K
+    for t, od in enumerate(od_values):
+        if od >= threshold:
+            return t
+    return None
+
+# Load the data from Excel (converted from docx)
+df = pd.read_excel("/mnt/data/MICROBIOLOGY TASK2.1.xlsx")
+
+# Reshape the data
+df_melted = df.melt(id_vars=["Time (hr)"], var_name="Strain", value_name="OD600")
+df_melted[['Strain_Name', 'Mutation']] = df_melted['Strain'].str.extract(r'(\w+)\s*([+-])')
+
+# Plot all growth curves
+unique_strains = df_melted['Strain_Name'].unique()
+time_to_capacity = []
+
+for strain in unique_strains:
+    plt.figure(figsize=(10, 6))
+    for mutation in ['-', '+']:
+        data = df_melted[(df_melted['Strain_Name'] == strain) & (df_melted['Mutation'] == mutation)]
+        plt.plot(data["Time (hr)"], data["OD600"], label=f"{strain} {mutation}")
+        
+        # Fit logistic growth to extract K
+        try:
+            popt, _ = curve_fit(
+                lambda t, K, r, lag: logistic_growth(K, r, t, lag),
+                data["Time (hr)"],
+                data["OD600"],
+                bounds=([0.1, 0.01, 0], [2, 2, 10])  # sensible bounds
+            )
+            fitted_curve = logistic_growth(popt[0], popt[1], data["Time (hr)"], popt[2])
+            t_80 = time_to_reach_80_percent(fitted_curve, popt[0])
+            time_to_capacity.append({
+                "Strain": strain,
+                "Mutation": mutation,
+                "Time_to_80%": data["Time (hr)"].iloc[t_80] if t_80 is not None else np.nan
+            })
+            plt.plot(data["Time (hr)"], fitted_curve, '--', alpha=0.5)
+        except RuntimeError:
+            print(f"Could not fit logistic model for {strain} {mutation}")
+
+    plt.title(f"Growth Curve for {strain}")
+    plt.xlabel("Time (hr)")
+    plt.ylabel("OD600")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+# Create DataFrame for time to 80%
+ttc_df = pd.DataFrame(time_to_capacity)
+
+# Scatter Plot
+plt.figure(figsize=(8, 5))
+sns.scatterplot(data=ttc_df, x="Strain", y="Time_to_80%", hue="Mutation", style="Mutation", s=100)
+plt.title("Time to Reach 80% of Carrying Capacity")
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+
+# Box Plot
+plt.figure(figsize=(6, 5))
+sns.boxplot(data=ttc_df, x="Mutation", y="Time_to_80%", palette="Set2")
+plt.title("Comparison of Time to 80% Carrying Capacity")
+plt.tight_layout()
+plt.show()
+
+# Statistical Test
+ko_times = ttc_df[ttc_df["Mutation"] == "-"]["Time_to_80%"].dropna()
+ki_times = ttc_df[ttc_df["Mutation"] == "+"]["Time_to_80%"].dropna()
+t_stat, p_value = ttest_ind(ko_times, ki_times)
+
+print(f"T-test p-value: {p_value:.4f}")
+if p_value < 0.05:
+    print("There is a statistically significant difference between KO and KI times.")
+else:
+    print("There is no statistically significant difference between KO and KI times.")
+
+# Observations
+# The overlay of the knock-out and knock-in curves lets us visually assess the effect of genetic modifications.
+# The time to reach 80% of carrying capacity varies among strains and mutations.
+# The boxplot helps us visually compare the central tendency and spread.
+# The T-test tells us whether the average time to growth saturation is significantly different due to mutations.
+
