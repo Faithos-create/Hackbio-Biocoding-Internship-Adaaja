@@ -1,0 +1,51 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Sample data (you should replace this with the full dataset or load it from a CSV)
+data = {
+    "Gene": ["DOK6", "TBX5", "SLC32A1", "IFITM1", "NUP93", "EMILIN2", "TPX2", "LAMA2", "CAV2", "TNN", "POU3F4", "COL13A1"],
+    "log2FoldChange": [0.51, -2.129, 0.9003, -1.687, 0.3659, 1.534, -0.9974, -1.425, -1.052, -1.658, 1.181, -1.647],
+    "pvalue": [1.861e-08, 5.655e-08, 7.664e-08, 3.735e-06, 3.373e-06, 2.976e-06, 2.097e-06, 2.39e-06, 3.213e-06, 8.973e-06, 1.062e-05, 1.394e-05]
+}
+
+df = pd.DataFrame(data)
+
+# Add -log10(pvalue)
+df["neg_log10_pvalue"] = -np.log10(df["pvalue"])
+
+# Categorize genes
+def categorize_gene(row):
+    if row["log2FoldChange"] > 1 and row["pvalue"] < 0.01:
+        return "Upregulated"
+    elif row["log2FoldChange"] < -1 and row["pvalue"] < 0.01:
+        return "Downregulated"
+    else:
+        return "Not Significant"
+
+df["category"] = df.apply(categorize_gene, axis=1)
+
+# Volcano plot
+plt.figure(figsize=(10, 6))
+sns.scatterplot(data=df, x="log2FoldChange", y="neg_log10_pvalue", hue="category",
+                palette={"Upregulated": "red", "Downregulated": "blue", "Not Significant": "grey"})
+plt.axvline(x=1, color='red', linestyle='--')
+plt.axvline(x=-1, color='blue', linestyle='--')
+plt.axhline(y=-np.log10(0.01), color='green', linestyle='--')
+plt.title("Volcano Plot")
+plt.xlabel("log2(Fold Change)")
+plt.ylabel("-log10(p-value)")
+plt.legend(title="Gene Regulation")
+plt.tight_layout()
+plt.show()
+
+# Get top upregulated and downregulated genes
+upregulated = df[(df["log2FoldChange"] > 1) & (df["pvalue"] < 0.01)].sort_values(by="pvalue")
+downregulated = df[(df["log2FoldChange"] < -1) & (df["pvalue"] < 0.01)].sort_values(by="pvalue")
+
+print("Top 5 Upregulated Genes:")
+print(upregulated.head(5)[["Gene", "log2FoldChange", "pvalue"]])
+
+print("\nTop 5 Downregulated Genes:")
+print(downregulated.head(5)[["Gene", "log2FoldChange", "pvalue"]])
