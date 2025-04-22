@@ -1,0 +1,91 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from io import StringIO
+
+# Step 1: Load the data (Assuming it's already extracted from the DOCX into a TSV string called `tsv_text`)
+df = pd.read_csv(StringIO(tsv_text), sep="\t")
+df = df.set_index(df.columns[0]).T  # Transpose: rows = samples, columns = metabolites
+
+# Step 2: Annotate each sample with type and treatment
+def parse_sample_name(name):
+    parts = name.lower().split('_')
+    sample_type = 'WT' if 'wt' in parts else 'mutant'
+    if 'dmso' in parts:
+        treatment = 'DMSO'
+    elif '0' in parts:
+        treatment = '0h'
+    elif '8h' in parts:
+        treatment = '8h'
+    elif '24h' in parts:
+        treatment = '24h'
+    else:
+        treatment = 'unknown'
+    return pd.Series([sample_type, treatment])
+
+sample_info = df.index.to_series().apply(parse_sample_name)
+sample_info.columns = ['Type', 'Treatment']
+df_meta = df.copy()
+df_meta[['Type', 'Treatment']] = sample_info
+
+# Step 3: Compute average per treatment group
+grouped = df_meta.groupby(['Type', 'Treatment']).mean()
+
+# Step 4: Calculate ΔM (metabolite change) between 24h and DMSO for WT and mutant
+delta_wt = grouped.loc[('WT', '24h')] - grouped.loc[('WT', 'DMSO')]
+delta_mutant = grouped.loc[('mutant', '24h')] - grouped.loc[('mutant', 'DMSO')]
+
+# Step 5: Create a scatter plot
+plt.figure(figsize=(10, 8))
+scatter_df = pd.DataFrame({'WT': delta_wt, 'Mutant': delta_mutant})
+scatter_df['Residual'] = (scatter_df['Mutant'] - scatter_df['WT'])  # residuals from line y=x
+
+# Step 6: Apply residual threshold for coloring
+residual_cutoff = 0.3
+scatter_df['Color'] = scatter_df['Residual'].apply(
+    lambda r: 'grey' if abs(r) <= residual_cutoff else 'salmon'
+)
+
+sns.scatterplot(data=scatter_df, x='WT', y='Mutant', hue='Color', palette={'grey': 'grey', 'salmon': 'salmon'})
+plt.plot([-5, 5], [-5, 5], 'k--')  # Line y=x
+plt.axhline(0, color='black', linewidth=0.5)
+plt.axvline(0, color='black', linewidth=0.5)
+plt.title("ΔM Scatter Plot: Mutant vs WT (24h - DMSO)")
+plt.xlabel("ΔM WT")
+plt.ylabel("ΔM Mutant")
+plt.legend(title="Residual Threshold")
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# Step 7: Print metabolites with significant deviations
+outliers = scatter_df[scatter_df['Color'] == 'salmon']
+print("Outlier Metabolites (|residual| > 0.3):")
+print(outliers.index.tolist())
+
+# Step 8: Plot line plots for 6 outliers
+selected_metabolites = outliers.index[:6]
+timepoints = ['0h', '8h', '24h']
+
+plt.figure(figsize=(15, 10))
+for i, metabolite in enumerate(selected_metabolites):
+    plt.subplot(2, 3, i+1)
+    for group in ['WT', 'mutant']:
+        values = [grouped.loc[(group, t)][metabolite] for t in timepoints]
+        plt.plot(timepoints, values, marker='o', label=group)
+    plt.title(metabolite)
+    plt.xlabel("Time")
+    plt.ylabel("Metabolite Level")
+    plt.legend()
+    plt.grid(True)
+
+plt.suptitle("Time-course of Selected Outlier Metabolites")
+plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+plt.show()
+
+# Comments:
+# - These metabolites were identified as outliers due to their high deviation from the expected line y = x.
+# - Upward deviation (Mutant > WT) may suggest enhanced metabolic response in mutants to pesticide.
+# - Downward deviation (Mutant < WT) may imply metabolic suppression or sensitivity.
+# - Line plots show dynamic changes over time. Some increase sharply at 24h in mutants compared to WT.
+# - Patterns could suggest altered metabolism related to resistance mechanisms in mutants.
